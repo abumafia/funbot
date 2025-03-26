@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-black text-white">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hallaym AI Chatbot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    #chatbox::-webkit-scrollbar {
+      display: none;
+    }
+    .typewriter span::after {
+      content: '|';
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0; }
+    }
+  </style>
+</head>
+
+<body class="h-screen w-screen overflow-hidden relative">
+  <!-- THREE.JS BACKGROUND -->
+  <canvas id="bgCanvas" class="absolute top-0 left-0 w-full h-full -z-10"></canvas>
+
+  <!-- CHAT UI -->
+  <div class="flex flex-col h-full">
+    <div class="text-center text-3xl py-4 font-bold bg-gray-900">Hallaym AI</div>
+
+    <div id="chatbox" class="flex-1 overflow-y-auto px-6 py-4 space-y-2 bg-black/80">
+      <!-- Messages will be injected here -->
+    </div>
+
+    <div class="p-4 bg-gray-900 flex items-center gap-2">
+      <input id="userInput" type="text" placeholder="Savol yozing..."
+        class="flex-1 p-3 rounded-xl text-black focus:outline-none" />
+      <button id="sendBtn" class="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700">Yuborish</button>
+    </div>
+  </div>
+
+  <script>
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const chatbox = document.getElementById('chatbox');
+
+    const delay = ms => new Promise(res => setTimeout(res, ms));
+
+    const chatMemory = JSON.parse(localStorage.getItem('hallaymMemory') || '{}');
+
+    function addMessage(text, from = 'user') {
+      const bubble = document.createElement('div');
+      bubble.className = `max-w-[70%] px-4 py-2 rounded-xl ${from === 'user' ? 'bg-blue-700 self-end ml-auto' : 'bg-gray-800 self-start'}`;
+      bubble.textContent = text;
+      chatbox.appendChild(bubble);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    async function typeWriter(text) {
+      const bubble = document.createElement('div');
+      bubble.className = 'max-w-[70%] px-4 py-2 rounded-xl bg-gray-800 self-start typewriter';
+      chatbox.appendChild(bubble);
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      for (let i = 0; i < text.length; i++) {
+        bubble.innerHTML = '<span>' + text.slice(0, i + 1) + '</span>';
+        await delay(50);
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
+    }
+
+    sendBtn.onclick = async () => {
+      const input = userInput.value.trim();
+      if (!input) return;
+      addMessage(input, 'user');
+      userInput.value = '';
+
+      if (chatMemory[input]) {
+        await typeWriter(chatMemory[input]);
+      } else {
+        await typeWriter("Bilmayman. Ayt-chi, bu nima?");
+
+        const answer = prompt("Javobni kiriting:");
+        if (answer) {
+          chatMemory[input] = answer;
+          localStorage.setItem('hallaymMemory', JSON.stringify(chatMemory));
+          await typeWriter("Yodda saqladim. Rahmat!");
+        } else {
+          await typeWriter("Javob olinmadi. Keyinroq urinib ko‘ring.");
+        }
+      }
+    };
+  </script>
+
+  <!-- THREE.JS SHAR ANIMATSIYASI -->
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bgCanvas'), alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    const geometry = new THREE.SphereGeometry(2, 64, 64);
+    const material = new THREE.MeshStandardMaterial({ color: 0x00ffff, wireframe: false });
+    const sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
+    const light = new THREE.PointLight(0xffffff, 1);
+    light.position.set(5, 5, 5);
+    scene.add(light);
+    camera.position.z = 5;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      sphere.rotation.y += 0.005;
+      sphere.rotation.x += 0.002;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+
+</html>
